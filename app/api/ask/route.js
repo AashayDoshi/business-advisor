@@ -15,6 +15,8 @@ GUARDRAILS: ${guardrails}
 Tone: ${tone}
 User question: ${question}`;
     
+    console.log('Sending to Gemini API...');
+    
     const response = await fetch(
       "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" +
       process.env.GEMINI_API_KEY,
@@ -42,15 +44,19 @@ User question: ${question}`;
       }
     );
     
+    console.log('Gemini API response status:', response.status);
     const data = await response.json();
-    const answer =
-      data.candidates?.[0]?.content?.parts?.[0]?.text || "No response from AI";
+    console.log('Gemini API response:', JSON.stringify(data).substring(0, 500));
+        console.log('Full response data:', JSON.stringify(data, null, 2));
     
+const answer = data?.candidates?.[0]?.content?.parts?.[0]?.text || JSON.stringify(data) || "No response from AI";
+    
+    console.log('Final answer:', answer.substring(0, 100));
     return Response.json({ answer });
   } catch (error) {
-    console.error("AI request failed:", error);
+    console.error("AI request failed:", error.message);
     return Response.json(
-      { error: "AI request failed" },
+      { error: "AI request failed: " + error.message },
       { status: 500 }
     );
   }
