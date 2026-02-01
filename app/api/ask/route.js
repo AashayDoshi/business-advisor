@@ -1,10 +1,3 @@
-import { createClient } from "@supabase/supabase-js";
-
-const supabaseServer = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
-
 export async function POST(request) {
   try {
     const {
@@ -15,10 +8,10 @@ export async function POST(request) {
       temperature,
       tone,
     } = await request.json();
-
+    
     const response = await fetch(
       "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" +
-        process.env.GEMINI_API_KEY,
+      process.env.GEMINI_API_KEY,
       {
         method: "POST",
         headers: {
@@ -43,28 +36,12 @@ User question: ${question}
         }),
       }
     );
-
+    
     const data = await response.json();
     const answer =
       data.candidates?.[0]?.content?.parts?.[0]?.text || "No response from AI";
-
-    // Log to Supabase
-    const { error } = await supabaseServer.from("interaction_logs").insert([
-      {
-        question,
-        answer,
-        system_prompt: systemPrompt,
-        knowledge_base: knowledgeBase,
-        guardrails,
-        temperature: parseFloat(temperature || 0.7),
-        tone,
-      },
-    ]);
-
-    if (error) {
-      console.error("Supabase insert error:", error);
-    }
-
+    
+    // TODO: Log to Supabase later
     return Response.json({ answer });
   } catch (error) {
     console.error("AI request failed:", error);
