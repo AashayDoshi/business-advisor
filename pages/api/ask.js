@@ -14,49 +14,42 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: "API key not configured" });
     }
 
-    const systemPrompt = "You are a business advisor helping Indian entrepreneurs and business professionals. Provide practical, actionable advice. Be concise and direct.";
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`;
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          system_instruction: {
-            parts: {
-              text: systemPrompt,
-            },
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            role: "user",
+            parts: [
+              {
+                text: question,
+              },
+            ],
           },
-          contents: [
-            {
-              parts: [
-                {
-                  text: question,
-                },
-              ],
-            },
-          ],
-        }),
-      }
-    );
+        ],
+      }),
+    });
 
     if (!response.ok) {
-      const error = await response.text();
-      console.error("Gemini API error:", error);
-      return res.status(500).json({ error: "Failed to get response from AI" });
+      const errorText = await response.text();
+      console.error("Gemini API error:", response.status, errorText);
+      return res.status(response.status).json({ error: "AI service error" });
     }
 
     const data = await response.json();
     
     const answer =
       data?.candidates?.[0]?.content?.parts?.[0]?.text ||
-      "Unable to generate a response. Please try again.";
+      "No response generated";
 
     res.status(200).json({ answer });
   } catch (error) {
-    console.error("API handler error:", error);
-    res.status(500).json({ error: "Internal server error" });
+    console.error("Handler error:", error.message);
+    res.status(500).json({ error: "Server error" });
   }
 }
