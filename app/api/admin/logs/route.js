@@ -1,16 +1,34 @@
-// This file has been moved to /api/logs/route.js
-// For backward compatibility, redirect to the new location
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseServer = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
 export async function GET(request) {
-  return new Response(
-    JSON.stringify({ message: "Moved to /api/logs" }),
-    { status: 301, headers: { Location: "/api/logs" } }
-  );
-}
+  try {
+    const { data, error } = await supabaseServer
+      .from('interaction_logs')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(100);
 
-export async function POST(request) {
-  return new Response(
-    JSON.stringify({ message: "Moved to /api/logs" }),
-    { status: 301, headers: { Location: "/api/logs" } }
-  );
+    if (error) {
+      return new Response(
+        JSON.stringify({ error: 'Failed to fetch logs' }),
+        { status: 500, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    return new Response(JSON.stringify(data), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  } catch (err) {
+    console.error(err);
+    return new Response(
+      JSON.stringify({ error: 'Failed to fetch logs' }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
 }
