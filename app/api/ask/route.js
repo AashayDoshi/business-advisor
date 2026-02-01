@@ -9,6 +9,12 @@ export async function POST(request) {
       tone,
     } = await request.json();
     
+    const prompt = `${systemPrompt}
+KNOWLEDGE BASE: ${knowledgeBase}
+GUARDRAILS: ${guardrails}
+Tone: ${tone}
+User question: ${question}`;
+    
     const response = await fetch(
       "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" +
       process.env.GEMINI_API_KEY,
@@ -22,17 +28,16 @@ export async function POST(request) {
             {
               parts: [
                 {
-                  text: `${systemPrompt}
-KNOWLEDGE BASE: ${knowledgeBase}
-GUARDRAILS: ${guardrails}
-Tone: ${tone}
-Temperature: ${temperature}
-User question: ${question}
-`,
+                  text: prompt,
                 },
               ],
             },
           ],
+          generationConfig: {
+            temperature: parseFloat(temperature) || 0.7,
+            topP: 0.9,
+            maxOutputTokens: 1024,
+          },
         }),
       }
     );
@@ -41,7 +46,6 @@ User question: ${question}
     const answer =
       data.candidates?.[0]?.content?.parts?.[0]?.text || "No response from AI";
     
-    // TODO: Log to Supabase later
     return Response.json({ answer });
   } catch (error) {
     console.error("AI request failed:", error);
