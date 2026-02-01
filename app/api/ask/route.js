@@ -1,60 +1,49 @@
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import { createClient } from '@supabase/supabase-js';
+import { NextResponse } from 'next/server';
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
 export async function POST(request) {
   try {
-    const {
-      question,
-      systemPrompt,
-      knowledgeBase,
-      guardrails,
-      temperature,
-      tone,
-    } = await request.json();
-    
-    const prompt = `${systemPrompt}
-KNOWLEDGE BASE: ${knowledgeBase}
-GUARDRAILS: ${guardrails}
+    const { question, systemPrompt, knowledgeBase, guardrails, temperature, tone } = await request.json();
+
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
+    const fullPrompt = `${systemPrompt}
+
+Knowledge Base: ${knowledgeBase}
+
+Guardrails: ${guardrails}
+
 Tone: ${tone}
-User question: ${question}`;
-    
-    console.log('Sending to Gemini API...');
-    
-    const response = await fetch(
-      "https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=" +      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                {
-                  text: prompt,
-                },
-              ],
-            },
-          ],
-          generationConfig: {
-            temperature: parseFloat(temperature) || 0.7,
-            topP: 0.9,
-            maxOutputTokens: 1024,
-          },
-        }),
+
+User Question: ${question}
+
+Provide a helpful business advisory response:`;
+
+    const result = await model.generateContent(fullPrompt);
+    const response = await result.response;
+    const answer = response.text();
+
+    // Log to Supabase
+    await supabase.from('interaction_logs').insert([
+      {
+        question,
+        answer,
+        timestamp: new Date().toISOString()
       }
-    );
-    
-    console.log('Gemini API response status:', response.status);
-    const data = await response.json();
-    console.log('Gemini API response:', JSON.stringify(data).substring(0, 500));
-        console.log('Full response data:', JSON.stringify(data, null, 2));
-    
-const answer = data?.candidates?.[0]?.content?.parts?.[0]?.text || JSON.stringify(data) || "No response from AI";
-    
-    console.log('Final answer:', answer.substring(0, 100));
-    return Response.json({ answer });
+    ]);
+
+    return NextResponse.json({ answer });
   } catch (error) {
-    console.error("AI request failed:", error.message);
-    return Response.json(
-      { error: "AI request failed: " + error.message },
+    console.error('Error:', error);
+    return NextResponse.json(
+      { error: 'AI request failed: ' + error.message },
       { status: 500 }
     );
   }
