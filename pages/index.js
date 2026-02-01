@@ -10,14 +10,28 @@ export default function Home() {
     if (!question) return;
     setLoading(true);
     setAnswer("");
-    const res = await fetch("/api/ask", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ question }),
-    });
-    const data = await res.json();
-    setAnswer(data.answer);
-    setLoading(false);
+    
+    try {
+      const res = await fetch("/api/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question }),
+      });
+
+      if (!res.ok) {
+        setAnswer("Error: API returned " + res.status);
+        setLoading(false);
+        return;
+      }
+
+      const data = await res.json();
+      const responseText = data.answer || data.error || "No response";
+      setAnswer(responseText);
+    } catch (error) {
+      setAnswer("Error: " + error.message);
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -39,7 +53,7 @@ export default function Home() {
         {loading ? "Thinking..." : "Ask"}
       </button>
       {answer && (
-        <div style={{ whiteSpace: "pre-wrap" }}>
+        <div style={{ marginTop: "20px", whiteSpace: "pre-wrap", backgroundColor: "#f5f5f5", padding: "15px", borderRadius: "5px" }}>
           <h3>Answer:</h3>
           <p>{answer}</p>
         </div>
