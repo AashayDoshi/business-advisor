@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect } from 'react';
 
 export default function Home() {
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState<Array<{role: string; content: string}>>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
