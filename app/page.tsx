@@ -6,6 +6,7 @@ export default function Home() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+    const [clickCount, setClickCount] = useState(0);
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -26,6 +27,7 @@ export default function Home() {
       setClickCount(0);
     }
     setTimeout(() => setClickCount(0), 3000);
+      const [clickCount, setClickCount] = useState(0);
   };
 
   const handleSend = async () => {
