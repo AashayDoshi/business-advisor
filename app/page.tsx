@@ -27,7 +27,6 @@ export default function Home() {
       setClickCount(0);
     }
     setTimeout(() => setClickCount(0), 3000);
-      const [clickCount, setClickCount] = useState(0);
   };
 
   const handleSend = async () => {
