@@ -1,123 +1,149 @@
 'use client';
-import Head from 'next/head';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 export default function Home() {
-  const [question, setQuestion] = useState('');
-  const [answer, setAnswer] = useState('');
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const messagesEndRef = useRef(null);
+  const [clickCount, setClickCount] = useState(0);
 
-  const handleAsk = async () => {
-    if (!question.trim()) return;
-    
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const handleAdminAccess = () => {
+    setClickCount(prev => prev + 1);
+    if (clickCount + 1 >= 5) {
+      const password = prompt('Enter admin password:');
+      if (password === 'bhai-admin') {
+        window.location.href = '/admin';
+      } else {
+        alert('Incorrect password');
+      }
+      setClickCount(0);
+    }
+    setTimeout(() => setClickCount(0), 3000);
+  };
+
+  const handleSend = async () => {
+    if (!input.trim() || loading) return;
+
+    const userMessage = { role: 'user', content: input };
+    setMessages(prev => [...prev, userMessage]);
+    setInput('');
     setLoading(true);
-    setError('');
-    setAnswer('');
 
     try {
-      const response = await fetch('/api/ask', {
+      const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          question,
-          systemPrompt: 'You are Jigneshbhai, a business advisor.',
-          knowledgeBase: 'Business advisory knowledge base',
-          guardrails: 'Be professional and helpful',
-          temperature: '0.7',
-          tone: 'professional',
-        }),
+        body: JSON.stringify({ message: input, history: messages })
       });
 
-      const data = await response.json();
+      const data = await res.json();
+      
       if (data.error) {
-        setError(data.error);
+        setMessages(prev => [...prev, { role: 'assistant', content: `Error: ${data.error}` }]);
       } else {
-        setAnswer(data.answer);
+        setMessages(prev => [...prev, { role: 'assistant', content: data.response }]);
       }
-    } catch (err) {
-      setError('Failed to fetch response');
+    } catch (error) {
+      setMessages(prev => [...prev, { role: 'assistant', content: 'Network error. Please try again.' }]);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={{ minHeight: '100vh', padding: '20px', backgroundColor: '#f5f5f5' }}>
-      <Head>
-        <title>Jigneshbhai Business Advisor</title>
-      </Head>
-      
-      <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-        <h1 style={{ color: '#333', textAlign: 'center' }}>Jigneshbhai Business Advisor</h1>
-        <p style={{ color: '#666', textAlign: 'center', marginBottom: '30px' }}>
-          Ask your business questions and get expert advice
-        </p>
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-white flex flex-col">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b border-orange-100">
+        <div className="max-w-4xl mx-auto px-4 py-4">
+          <h1 className="text-2xl font-bold text-orange-600">Jigneshbhai Business Advisor</h1>
+          <p className="text-sm text-gray-600">Your AI-powered business strategy partner</p>
+        </div>
+      </div>
 
-        <div style={{
-          backgroundColor: 'white',
-          padding: '20px',
-          borderRadius: '8px',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-        }}>
-          <textarea
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            placeholder="Ask your business question here..."
-            style={{
-              width: '100%',
-              minHeight: '100px',
-              padding: '10px',
-              borderRadius: '4px',
-              border: '1px solid #ddd',
-              fontSize: '14px',
-              fontFamily: 'inherit',
-            }}
-          />
+      {/* Chat Container */}
+      <div className="flex-1 max-w-4xl w-full mx-auto px-4 py-6 overflow-hidden flex flex-col">
+        <div className="flex-1 overflow-y-auto space-y-4 mb-4">
+          {messages.length === 0 && (
+            <div className="text-center py-12">
+              <div className="text-6xl mb-4">🤝</div>
+              <h2 className="text-2xl font-semibold text-gray-700 mb-2">Welcome to Jigneshbhai</h2>
+              <p className="text-gray-500">Ask me anything about business strategy, finance, or entrepreneurship</p>
+            </div>
+          )}
           
-          <button
-            onClick={handleAsk}
-            disabled={loading}
-            style={{
-              marginTop: '15px',
-              padding: '10px 20px',
-              backgroundColor: loading ? '#ccc' : '#007bff',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              fontSize: '14px',
-              fontWeight: 'bold',
-            }}
-          >
-            {loading ? 'Loading...' : 'Get Advice'}
-          </button>
-
-          {error && (
-            <div style={{
-              marginTop: '15px',
-              padding: '10px',
-              backgroundColor: '#ffebee',
-              color: '#c62828',
-              borderRadius: '4px',
-            }}>
-              {error}
+          {messages.map((msg, idx) => (
+            <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+              <div className={`max-w-[80%] rounded-2xl px-4 py-3 ${
+                msg.role === 'user'
+                  ? 'bg-orange-500 text-white'
+                  : 'bg-white shadow-md border border-orange-100 text-gray-800'
+              }`}>
+                <div className="whitespace-pre-wrap">{msg.content}</div>
+              </div>
+            </div>
+          ))}
+          
+          {loading && (
+            <div className="flex justify-start">
+              <div className="bg-white shadow-md border border-orange-100 rounded-2xl px-4 py-3">
+                <div className="flex space-x-2">
+                  <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce" style={{animationDelay: '0ms'}}></div>
+                  <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce" style={{animationDelay: '150ms'}}></div>
+                  <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce" style={{animationDelay: '300ms'}}></div>
+                </div>
+              </div>
             </div>
           )}
+          <div ref={messagesEndRef} />
+        </div>
 
-          {answer && (
-            <div style={{
-              marginTop: '15px',
-              padding: '15px',
-              backgroundColor: '#e8f5e9',
-              color: '#2e7d32',
-              borderRadius: '4px',
-              lineHeight: '1.6',
-            }}>
-              <strong>Jigneshbhai's Advice:</strong>
-              <p style={{ marginTop: '10px' }}>{answer}</p>
-            </div>
-          )}
+        {/* Input Area */}
+        <div className="bg-white rounded-2xl shadow-lg border border-orange-200 p-4">
+          <div className="flex space-x-3">
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+              placeholder="Ask Jigneshbhai anything..."
+              className="flex-1 px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500"
+              disabled={loading}
+            />
+            <button
+              onClick={handleSend}
+              disabled={loading || !input.trim()}
+              className="px-6 py-3 bg-orange-500 text-white rounded-xl hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-medium"
+            >
+              Send
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="bg-white border-t border-orange-100 py-4">
+        <div className="max-w-4xl mx-auto px-4 text-center">
+          <p className="text-sm text-gray-600">
+            © 2026 Jigneshbhai Business Advisor |
+            <span 
+              onClick={handleAdminAccess}
+              className="cursor-pointer hover:text-orange-600 ml-1"
+            >
+              All rights reserved
+            </span>
+          </p>
+          <p className="text-xs text-gray-400 mt-1">
+            AI-powered insights for strategic business decisions
+          </p>
         </div>
       </div>
     </div>
