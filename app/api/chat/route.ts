@@ -11,6 +11,12 @@ export async function POST(request: Request) {
       );
     }
 
+    // Demo response for when API key is not configured
+    if (!process.env.GEMINI_API_KEY) {
+      const demoResponse = `Thanks for reaching out about "${message}"! As Jigneshbhai, I'd typically provide detailed business strategy advice powered by AI. However, the API key is not currently configured. Please ensure your GEMINI_API_KEY environment variable is set up correctly. In the meantime, I recommend: 1) Focus on your core business value proposition, 2) Build strong relationships with customers, 3) Keep learning and adapting to market changes.`;
+      return NextResponse.json({ response: demoResponse });
+    }
+
     const systemPrompt = 'You are Jigneshbhai, a friendly and knowledgeable business advisor specializing in strategy, finance, and entrepreneurship.';
     
     const fullPrompt = `${systemPrompt}\n\nUser: ${message}\n\nProvide helpful, practical business advice:`;
@@ -35,7 +41,10 @@ export async function POST(request: Request) {
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`Gemini API error: ${response.status}`, errorText);
-      throw new Error(`API error: ${response.status}`);
+      
+      // Fallback response if API call fails
+      const fallbackResponse = `I appreciate your question about "${message}". While I'm experiencing temporary API connectivity issues, I can still offer some general guidance: For successful business strategy, focus on understanding your market, building a strong team, managing cash flow effectively, and staying adaptable to change. Would you like more specific advice?`;
+      return NextResponse.json({ response: fallbackResponse });
     }
 
     const data = await response.json();
