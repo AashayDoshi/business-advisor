@@ -5,7 +5,7 @@ export default function Home() {
   const [messages, setMessages] = useState<Array<{role: string; content: string}>>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
     const [clickCount, setClickCount] = useState(0);
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
