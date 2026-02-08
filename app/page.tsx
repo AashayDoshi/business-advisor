@@ -49,6 +49,7 @@ export default function Home() {
       if (data.error) {
         setMessages(prev => [...prev, { role: 'assistant', content: `Error: ${data.error}` }]);
       } else {
+                console.log('API Response:', data);
         setMessages(prev => [...prev, { role: 'assistant', content: data.response }]);
       }
     } catch (error) {
