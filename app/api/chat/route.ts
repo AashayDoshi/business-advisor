@@ -41,6 +41,8 @@ export async function POST(request: Request) {
             temperature: 0.7,
             maxOutputTokens: 2048,
         }),
+              }
+          );
       }
     if (!response.ok) {
       const errorText = await response.text();
