@@ -48,7 +48,8 @@ export async function POST(request: Request) {
       
       // Fallback response if API call fails
       const fallbackResponse = `I appreciate your question about "${message}". While I'm experiencing temporary API connectivity issues, I can still offer some general guidance: For successful business strategy, focus on understanding your market, building a strong team, managing cash flow effectively, and staying adaptable to change. Would you like more specific advice?`;
-      return NextResponse.json({ response: fallbackResponse });
+            // DEBUG: Include error details in response for debugging
+            return NextResponse.json({ response: fallbackResponse, debug: { status: response.status, error: errorText.substring(0, 200) } });
     }
 
     const data = await response.json();
