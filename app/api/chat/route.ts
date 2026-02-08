@@ -40,13 +40,8 @@ export async function POST(request: Request) {
           generationConfig: {
             temperature: 0.7,
             maxOutputTokens: 2048,
-            topP: 1,
-            topK: 32
-          }
         }),
       }
-    );
-
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`Gemini API error: ${response.status}`, errorText);
