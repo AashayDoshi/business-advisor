@@ -27,12 +27,21 @@ export async function POST(request: Request) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contents: [{
-            parts: [{ text: fullPrompt }]
-          }],
+          contents: [
+            {
+              role: 'user',
+              parts: [
+                {
+                  text: fullPrompt
+                }
+              ]
+            }
+          ],
           generationConfig: {
             temperature: 0.7,
             maxOutputTokens: 2048,
+            topP: 1,
+            topK: 32
           }
         }),
       }
